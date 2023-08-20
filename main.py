@@ -1,6 +1,6 @@
-import argparse
-
 import pymysql
+import argparse
+import logging
 
 
 def convert_database(
@@ -10,7 +10,14 @@ def convert_database(
     database: str,
     source_charset: str,
     target_charset: str,
+    log_level: str,
 ) -> None:
+    # Set up logging
+    numeric_level = getattr(logging, log_level.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError(f"Invalid log level: {log_level}")
+    logging.basicConfig(level=numeric_level)
+
     # Connect to the database
     connection = pymysql.connect(
         host=host, user=user, password=password, database=database
@@ -24,7 +31,7 @@ def convert_database(
     # Process each table
     for table in tables:
         table_name = table[0]
-        print(f"Converting table: {table_name}")
+        logging.info(f"Converting table: {table_name}")
 
         # Get column names and column types
         cursor.execute(f"SHOW COLUMNS FROM `{table_name}`")
@@ -34,7 +41,7 @@ def convert_database(
         for column in columns:
             column_name = column[0]
             column_type = column[1].lower()
-            print(f"  Converting column: {column_name}")
+            logging.info(f"Converting column: {table_name}.{column_name}")
 
             # Check if the column type is a string type
             if any(
@@ -48,11 +55,17 @@ def convert_database(
                 try:
                     cursor.execute(sql)
                 except pymysql.err.OperationalError as e:
-                    print(f"Error converting column {column_name}: {e}")
+                    logging.error(
+                        f"Error converting column {table_name}.{column_name}: {e}"
+                    )
                 except pymysql.err.InternalError as e:
-                    print(f"Error converting column {column_name}: {e}")
+                    logging.error(
+                        f"Error converting column {table_name}.{column_name}: {e}"
+                    )
                 except pymysql.err.IntegrityError as e:
-                    print(f"Error converting column {column_name}: {e}")
+                    logging.error(
+                        f"Error converting column {table_name}.{column_name}: {e}"
+                    )
 
         # Commit changes
         connection.commit()
@@ -80,6 +93,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--target_charset", required=True, help="The target character set."
     )
+    parser.add_argument(
+        "--log_level",
+        required=False,
+        help="The log level (e.g., INFO, DEBUG, ERROR).",
+        default="INFO",
+    )
     args = parser.parse_args()
 
     convert_database(
@@ -89,4 +108,5 @@ if __name__ == "__main__":
         args.database,
         args.source_charset,
         args.target_charset,
+        args.log_level,
     )
