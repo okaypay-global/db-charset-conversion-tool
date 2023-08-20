@@ -3,40 +3,53 @@ import argparse
 
 
 def convert_database(host: str, user: str, password: str, database: str) -> None:
-    # 连接到数据库
+    # Connect to the database
     connection = pymysql.connect(
         host=host, user=user, password=password, database=database
     )
     cursor = connection.cursor()
 
-    # 获取所有表名
+    # Get all table names
     cursor.execute("SHOW TABLES")
     tables = cursor.fetchall()
 
-    # 对每一个表进行操作
+    # Process each table
     for table in tables:
         table_name = table[0]
         print(f"Converting table: {table_name}")
 
-        # 获取列名
-        cursor.execute(f"SHOW COLUMNS FROM {table_name}")
+        # Get column names and column types
+        cursor.execute(f"SHOW COLUMNS FROM `{table_name}`")
         columns = cursor.fetchall()
 
-        # 对每一个列进行操作
+        # Process each column
         for column in columns:
             column_name = column[0]
+            column_type = column[1].lower()
             print(f"  Converting column: {column_name}")
 
-            # 转换列数据
-            sql = f"""UPDATE {table_name}
-                      SET {column_name} = CONVERT(CAST(CONVERT({column_name} USING gbk) AS BINARY) USING utf8mb4)
-                      WHERE {column_name} IS NOT NULL AND {column_name} <> '';"""
-            cursor.execute(sql)
+            # Check if the column type is a string type
+            if any(
+                x in column_type
+                for x in ["char", "text", "enum", "set", "binary", "blob", "json"]
+            ):
+                # Convert column data
+                sql = f"""UPDATE `{table_name}`
+                          SET `{column_name}` = CONVERT(CAST(CONVERT(`{column_name}` USING gbk) AS BINARY) USING utf8mb4)
+                          WHERE `{column_name}` IS NOT NULL AND `{column_name}` <> '';"""
+                try:
+                    cursor.execute(sql)
+                except pymysql.err.OperationalError as e:
+                    print(f"Error converting column {column_name}: {e}")
+                except pymysql.err.InternalError as e:
+                    print(f"Error converting column {column_name}: {e}")
+                except pymysql.err.IntegrityError as e:
+                    print(f"Error converting column {column_name}: {e}")
 
-        # 提交更改
+        # Commit changes
         connection.commit()
 
-    # 关闭连接
+    # Close the connection
     cursor.close()
     connection.close()
 
