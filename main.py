@@ -1,8 +1,16 @@
-import pymysql
 import argparse
 
+import pymysql
 
-def convert_database(host: str, user: str, password: str, database: str) -> None:
+
+def convert_database(
+    host: str,
+    user: str,
+    password: str,
+    database: str,
+    source_charset: str,
+    target_charset: str,
+) -> None:
     # Connect to the database
     connection = pymysql.connect(
         host=host, user=user, password=password, database=database
@@ -35,7 +43,7 @@ def convert_database(host: str, user: str, password: str, database: str) -> None
             ):
                 # Convert column data
                 sql = f"""UPDATE `{table_name}`
-                          SET `{column_name}` = CONVERT(CAST(CONVERT(`{column_name}` USING gbk) AS BINARY) USING utf8mb4)
+                          SET `{column_name}` = CONVERT(CAST(CONVERT(`{column_name}` USING {source_charset}) AS BINARY) USING {target_charset})
                           WHERE `{column_name}` IS NOT NULL AND `{column_name}` <> '';"""
                 try:
                     cursor.execute(sql)
@@ -56,7 +64,7 @@ def convert_database(host: str, user: str, password: str, database: str) -> None
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Convert a MySQL database from GBK to utf8mb4."
+        description="Convert a MySQL database between two character sets."
     )
     parser.add_argument(
         "--host", required=False, help="The database host.", default="localhost"
@@ -66,6 +74,19 @@ if __name__ == "__main__":
     )
     parser.add_argument("--password", required=True, help="The database password.")
     parser.add_argument("--database", required=True, help="The database name.")
+    parser.add_argument(
+        "--source_charset", required=True, help="The source character set."
+    )
+    parser.add_argument(
+        "--target_charset", required=True, help="The target character set."
+    )
     args = parser.parse_args()
 
-    convert_database(args.host, args.user, args.password, args.database)
+    convert_database(
+        args.host,
+        args.user,
+        args.password,
+        args.database,
+        args.source_charset,
+        args.target_charset,
+    )
