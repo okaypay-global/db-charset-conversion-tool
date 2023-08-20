@@ -45,8 +45,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Convert a MySQL database from GBK to utf8mb4."
     )
-    parser.add_argument("--host", required=True, help="The database host.")
-    parser.add_argument("--user", required=True, help="The database user.")
+    parser.add_argument(
+        "--host", required=False, help="The database host.", default="localhost"
+    )
+    parser.add_argument(
+        "--user", required=False, help="The database user.", default="root"
+    )
     parser.add_argument("--password", required=True, help="The database password.")
     parser.add_argument("--database", required=True, help="The database name.")
     args = parser.parse_args()
