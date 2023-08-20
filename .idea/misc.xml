@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Black">
+    <option name="enabledOnReformat" value="true" />
+    <option name="enabledOnSave" value="true" />
+    <option name="executionMode" value="BINARY" />
+    <option name="pathToExecutable" value="/opt/homebrew/anaconda3/bin/black" />
+    <option name="sdkUUID" value="3336ef23-4c07-4aba-afab-f377e3ade46c" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="scripts" project-jdk-type="Python SDK" />
+</project>
